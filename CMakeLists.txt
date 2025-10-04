@@ -5,6 +5,10 @@ project(geometry-central)
 ### Policy settings
 cmake_policy(SET CMP0054 NEW)   # don't implicitly dereference inside if()
 
+# Conan 2 support: include the toolchain if it exists
+if(EXISTS "${CMAKE_BINARY_DIR}/conan_toolchain.cmake")
+  include("${CMAKE_BINARY_DIR}/conan_toolchain.cmake")
+endif()
 
 ### Process settings
 option(BUILD_SHARED_LIBS "Build the shared library" FALSE)
@@ -50,9 +54,13 @@ SET(GC_HAVE_SUITESPARSE ${GC_HAVE_SUITESPARSE} PARENT_SCOPE)
 ### Recurse to the source code
 add_subdirectory(src)
 
+# Modern CMake package configuration for Conan and general use
+include(CMakePackageConfigHelpers)
+
 # install
 install(
   TARGETS geometry-central
+  EXPORT geometry-centralTargets
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib)
@@ -63,3 +71,25 @@ install(
   FILES_MATCHING
   PATTERN "*.h"
   PATTERN "*.ipp")
+
+# Install CMake config files for find_package() support
+install(EXPORT geometry-centralTargets
+  FILE geometry-centralTargets.cmake
+  NAMESPACE geometry-central::
+  DESTINATION lib/cmake/geometry-central)
+
+# Create and install config file
+configure_package_config_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/geometry-centralConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/geometry-centralConfig.cmake"
+  INSTALL_DESTINATION lib/cmake/geometry-central)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/geometry-centralConfigVersion.cmake"
+  VERSION 0.2.0
+  COMPATIBILITY SameMajorVersion)
+
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/geometry-centralConfig.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/geometry-centralConfigVersion.cmake"
+  DESTINATION lib/cmake/geometry-central)

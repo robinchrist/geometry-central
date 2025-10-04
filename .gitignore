@@ -2,6 +2,11 @@
 build/
 build_debug/
 
+# Conan artifacts
+conan.lock
+CMakeUserPresets.json
+test_package/build/
+
 # Editor and OS things
 .DS_Store
 .vscode

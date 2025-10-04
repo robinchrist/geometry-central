@@ -16,6 +16,7 @@ endif()
 # === Resolve Eigen dependency
 
 # This script uses the following policies in order to find Eigen:
+#  (0) If using Conan, Eigen is provided by Conan (via find_package)
 #  (1) Use Eigen3::Eigen target if it's already defined ignoring (2,3,4)
 #  (2) If GC_EIGEN_LOCATION is set, use the copy of Eigen there (an error will be thrown if Eigen is not found there)
 #  (3) Invoke find_package() (if no suitable Eigen is found, will proceed to next step)
@@ -26,7 +27,7 @@ message("--  resolving Eigen dependency:")
 set(GC_EIGEN_LOCATION "" CACHE STRING "Path to Eigen installation. Only needed if Eigen is not already available in CMAKE, will not be found by find_package(), and should not be auto-downloaded.")
 set(GC_ALWAYS_DOWNLOAD_EIGEN "OFF" CACHE BOOL "Prefer to auto-download a copy Eigen if a system copy might exist.")
 
-# (1) Target exists already from somewhere else
+# (1) Target exists already from somewhere else (including Conan)
 if(TARGET Eigen3::Eigen)
   if(${GC_EIGEN_LOCATION})
     # Change this to a FATAL_ERROR if the constraint should be observed

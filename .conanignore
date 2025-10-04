@@ -1,0 +1,14 @@
+# Conan ignore file - excludes files from being copied during conan create
+.git
+.github
+build
+cmake-build-*
+*.user
+*.pyc
+__pycache__
+test
+docs
+*.md
+!conandata.yml
+.gitignore
+.clang-format
