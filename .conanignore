@@ -8,7 +8,9 @@ cmake-build-*
 __pycache__
 test
 docs
+examples
 *.md
 !conandata.yml
 .gitignore
 .clang-format
+test_conan.sh
