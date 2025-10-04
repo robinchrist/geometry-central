@@ -16,6 +16,9 @@ class GeometryCentralConan(ConanFile):
     description = "A modern C++ library of data structures and algorithms for geometry processing"
     topics = ("geometry", "geometry-processing", "mesh", "cpp")
     
+    # Conan 2 best practice: declare package type
+    package_type = "library"
+    
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
     options = {
