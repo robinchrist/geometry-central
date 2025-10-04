@@ -5,6 +5,9 @@
 #include "geometrycentral/utilities/vector2.h"
 #include "geometrycentral/utilities/vector3.h"
 
+#include <memory>
+#include <functional>
+
 namespace geometrycentral {
 namespace surface {
 
@@ -30,6 +33,41 @@ public:
   // Construct a geometry object on another mesh identical to this one
   // TODO move this to exist in realizations only
   std::unique_ptr<BaseGeometryInterface> reinterpretTo(SurfaceMesh& targetMesh);
+
+  // == Custom managed quantities
+  // Allows users to register custom quantities that work similarly to built-in managed quantities
+
+  // Helper class for managing custom quantities
+  template <typename T>
+  class CustomManagedQuantity {
+  public:
+    CustomManagedQuantity(T* dataBuffer_, std::function<void()> computeFunc_, 
+                          std::vector<DependentQuantity*>& quantities_)
+        : quantityD(dataBuffer_, computeFunc_, quantities_) {}
+
+    // Require the quantity (compute if needed)
+    void require() { quantityD.require(); }
+
+    // Unrequire the quantity
+    void unrequire() { quantityD.unrequire(); }
+
+    // Access the underlying data
+    T& get() { return *quantityD.dataBuffer; }
+    const T& get() const { return *quantityD.dataBuffer; }
+
+  private:
+    DependentQuantityD<T> quantityD;
+  };
+
+  // Register a custom managed quantity
+  // Usage:
+  //   auto myQuantity = geometry.registerCustomManagedQuantity<FaceData<double>>(
+  //       myData, [&]() { /* compute myData */ });
+  //   myQuantity->require();
+  //   double value = myQuantity->get()[someFace];
+  template <typename T>
+  std::shared_ptr<CustomManagedQuantity<T>> registerCustomManagedQuantity(
+      T& dataBuffer, std::function<void()> computeFunc);
 
   // Hide copy and move constructors; users are more likely to use them accidentally than intentionally.
   // See the explicit copy() function in derived classes.
@@ -87,6 +125,10 @@ protected:
   // there is no need to delete these.
   std::vector<DependentQuantity*> quantities;
 
+  // Storage for custom managed quantities (owned pointers)
+  // We need to keep these alive for the lifetime of the geometry object
+  std::vector<std::shared_ptr<void>> customQuantityStorage;
+
   // === Implementation details for quantities
 
   // == Indices
@@ -112,6 +154,15 @@ protected:
   DependentQuantityD<BoundaryLoopData<size_t>> boundaryLoopIndicesQ;
   virtual void computeBoundaryLoopIndices();
 };
+
+// Template implementation for custom managed quantities
+template <typename T>
+std::shared_ptr<typename BaseGeometryInterface::CustomManagedQuantity<T>>
+BaseGeometryInterface::registerCustomManagedQuantity(T& dataBuffer, std::function<void()> computeFunc) {
+  auto customQuantity = std::make_shared<CustomManagedQuantity<T>>(&dataBuffer, computeFunc, quantities);
+  customQuantityStorage.push_back(customQuantity);
+  return customQuantity;
+}
 
 } // namespace surface
 } // namespace geometrycentral

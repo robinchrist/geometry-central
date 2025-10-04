@@ -137,6 +137,88 @@ TEST_F(HalfedgeGeometrySuite, RefreshMutationTest) {
 }
 
 
+// Test custom managed quantities
+TEST_F(HalfedgeGeometrySuite, CustomManagedQuantities) {
+  for (auto& asset : {getAsset("bob_small.ply", false), getAsset("bob_small.ply", true)}) {
+    asset.printThyName();
+    SurfaceMesh& mesh = *asset.mesh;
+    VertexPositionGeometry& geometry = *asset.geometry;
+
+    // Create a custom quantity: vertex areas computed from face areas
+    VertexData<double> customVertexAreas(mesh);
+    
+    // Register it as a managed quantity with a compute function
+    auto customQuantity = geometry.registerCustomManagedQuantity<VertexData<double>>(
+        customVertexAreas,
+        [&]() {
+          // Compute function: compute vertex areas from face areas
+          // IMPORTANT: Re-initialize the data buffer (just like built-in quantities do)
+          customVertexAreas = VertexData<double>(mesh);
+          
+          geometry.requireFaceAreas();
+          for (Vertex v : mesh.vertices()) {
+            double area = 0.0;
+            for (Face f : v.adjacentFaces()) {
+              area += geometry.faceAreas[f] / f.degree();
+            }
+            customVertexAreas[v] = area;
+          }
+        });
+
+    // Initially the quantity values should be zero (MeshData is pre-allocated)
+    EXPECT_EQ(customVertexAreas.size(), mesh.nVertices());
+    for (Vertex v : mesh.vertices()) {
+      EXPECT_EQ(customVertexAreas[v], 0.0);
+    }
+
+    // Require the quantity - should compute it
+    customQuantity->require();
+    EXPECT_EQ(customVertexAreas.size(), mesh.nVertices());
+
+    // Verify computed values are reasonable and non-zero
+    double totalArea = 0.0;
+    for (Vertex v : mesh.vertices()) {
+      EXPECT_GT(customVertexAreas[v], 0.0);
+      EXPECT_TRUE(std::isfinite(customVertexAreas[v]));
+      totalArea += customVertexAreas[v];
+    }
+    
+    // Total area should match face areas
+    geometry.requireFaceAreas();
+    double faceAreaSum = 0.0;
+    for (Face f : mesh.faces()) {
+      faceAreaSum += geometry.faceAreas[f];
+    }
+    EXPECT_NEAR(totalArea, faceAreaSum, 1e-6);
+
+    // Test that refreshQuantities works with custom quantities
+    // Save old values
+    VertexData<double> oldAreas(mesh);
+    for (Vertex v : mesh.vertices()) {
+      oldAreas[v] = customVertexAreas[v];
+    }
+
+    // Refresh should recompute
+    geometry.refreshQuantities();
+    for (Vertex v : mesh.vertices()) {
+      EXPECT_NEAR(customVertexAreas[v], oldAreas[v], 1e-10);
+    }
+
+    // Unrequire the quantity
+    customQuantity->unrequire();
+
+    // Purge should clear it (MeshData will be cleared and deallocated)
+    geometry.purgeQuantities();
+    
+    // After purging, if we require again, it should recompute
+    customQuantity->require();
+    for (Vertex v : mesh.vertices()) {
+      EXPECT_NEAR(customVertexAreas[v], oldAreas[v], 1e-10);
+    }
+  }
+}
+
+
 TEST_F(HalfedgeGeometrySuite, Purge) {
   for (auto& asset : {getAsset("bob_small.ply", false), getAsset("bob_small.ply", true)}) {
     SurfaceMesh& mesh = *asset.mesh;
