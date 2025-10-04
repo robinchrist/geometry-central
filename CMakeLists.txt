@@ -48,9 +48,6 @@ endif()
 ### Do anything needed for dependencies and bring their stuff in to scope
 add_subdirectory(deps)
 
-# copy variables set by deps upward
-SET(GC_HAVE_SUITESPARSE ${GC_HAVE_SUITESPARSE} PARENT_SCOPE)
-
 ### Recurse to the source code
 add_subdirectory(src)
 
@@ -59,7 +56,7 @@ include(CMakePackageConfigHelpers)
 
 # install
 install(
-  TARGETS geometry-central
+  TARGETS geometry-central nanort nanoflann happly eigen
   EXPORT geometry-centralTargets
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
@@ -71,6 +68,22 @@ install(
   FILES_MATCHING
   PATTERN "*.h"
   PATTERN "*.ipp")
+
+# Install vendored header-only libraries
+install(
+  DIRECTORY ${CMAKE_SOURCE_DIR}/deps/nanort/include/
+  DESTINATION include/geometry-central-vendored/nanort
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+
+install(
+  DIRECTORY ${CMAKE_SOURCE_DIR}/deps/nanoflann/include/
+  DESTINATION include/geometry-central-vendored/nanoflann
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+
+install(
+  DIRECTORY ${CMAKE_SOURCE_DIR}/deps/happly/
+  DESTINATION include/geometry-central-vendored/happly
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
 
 # Install CMake config files for find_package() support
 install(EXPORT geometry-centralTargets

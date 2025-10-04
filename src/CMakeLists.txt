@@ -178,8 +178,11 @@ SET(HEADERS
 # Create a single library for the project
 add_library(geometry-central ${SRCS} ${HEADERS})
 
-# Includes from this project
-target_include_directories(geometry-central PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+# Includes from this project - use generator expressions for proper install paths
+target_include_directories(geometry-central PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+  $<INSTALL_INTERFACE:include>
+)
 
 # Add all includes and link libraries from dependencies, which were populated in deps/CMakeLists.txt
 target_link_libraries(geometry-central PUBLIC ${GC_DEP_LIBS})

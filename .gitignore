@@ -6,6 +6,8 @@ build_debug/
 conan.lock
 CMakeUserPresets.json
 test_package/build/
+__pycache__/
+*.pyc
 
 # Editor and OS things
 .DS_Store

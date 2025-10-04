@@ -40,6 +40,10 @@ for(Vertex v : mesh->vertices()) {
 
 Check out the docs, tutorials, and build instructions at [geometry-central.net](http://geometry-central.net).  Use the [sample project](https://github.com/nmwsharp/gc-polyscope-project-template/) to get started with a build system and a gui.
 
+## Dependency Management
+
+geometry-central now supports [Conan 2](https://conan.io/) for modern C++ dependency management. See [CONAN.md](CONAN.md) for detailed instructions on using Conan with this project. The traditional CMake-based build system continues to work as before.
+
 
 **Related alternatives:** 
 [CGAL](https://www.cgal.org/),

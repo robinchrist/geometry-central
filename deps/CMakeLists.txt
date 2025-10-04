@@ -151,12 +151,16 @@ endif()
 
 if (NOT TARGET nanort)
     add_library(nanort INTERFACE)
-    target_include_directories(nanort INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nanort/include>)
+    target_include_directories(nanort INTERFACE 
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nanort/include>
+      $<INSTALL_INTERFACE:include/geometry-central-vendored/nanort>)
 endif()
 
 if (NOT TARGET nanoflann)
     add_library(nanoflann INTERFACE)
-    target_include_directories(nanoflann INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nanoflann/include>)
+    target_include_directories(nanoflann INTERFACE 
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nanoflann/include>
+      $<INSTALL_INTERFACE:include/geometry-central-vendored/nanoflann>)
 
     # For backward compatibility, we need to make a symlink in the build directory.
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/nanoflann)
@@ -168,7 +172,9 @@ endif()
 
 if (NOT TARGET happly)
     add_library(happly INTERFACE)
-    target_include_directories(happly INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/happly>)
+    target_include_directories(happly INTERFACE 
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/happly>
+      $<INSTALL_INTERFACE:include/geometry-central-vendored/happly>)
 endif()
 
 # Find other simpler dependencies
