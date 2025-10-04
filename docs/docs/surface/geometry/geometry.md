@@ -107,6 +107,67 @@ In addition, the caching system provides two methods.
 ??? func "`#!cpp void GeometryInterface::purgeQuantities()`"
     Delete all cached quantities which are not currently `require()`'d, reducing memory usage.
 
+### Custom managed quantities
+
+In addition to the built-in managed quantities, you can register your own custom managed quantities that integrate with the same caching and refresh system.
+
+This is useful when you have application-specific geometric quantities that you want to compute and cache alongside the built-in quantities.
+
+**Example:**
+
+```cpp
+#include "geometrycentral/surface/vertex_position_geometry.h"
+#include "geometrycentral/surface/meshio.h"
+
+// Load a mesh
+std::unique_ptr<SurfaceMesh> mesh;
+std::unique_ptr<VertexPositionGeometry> geometry;
+std::tie(mesh, geometry) = readSurfaceMesh("bunny.obj");
+
+// Create a custom quantity: vertex areas
+VertexData<double> customVertexAreas(*mesh);
+
+// Register it as a managed quantity with a compute function
+auto customQuantity = geometry->registerCustomManagedQuantity<VertexData<double>>(
+    customVertexAreas,
+    [&]() {
+      // Compute function: compute vertex areas from face areas
+      // IMPORTANT: Re-initialize the data buffer (just like built-in quantities do)
+      customVertexAreas = VertexData<double>(*mesh);
+      
+      geometry->requireFaceAreas();
+      for (Vertex v : mesh->vertices()) {
+        double area = 0.0;
+        for (Face f : v.adjacentFaces()) {
+          area += geometry->faceAreas[f] / f.degree();
+        }
+        customVertexAreas[v] = area;
+      }
+    });
+
+// Use the custom quantity just like built-in quantities
+customQuantity->require();  // Computes the quantity if needed
+
+// Access the data
+for (Vertex v : mesh->vertices()) {
+  double area = customVertexAreas[v];
+  // ... use the area ...
+}
+
+// Custom quantities work with refreshQuantities() and purgeQuantities()
+geometry->refreshQuantities();  // Recomputes custom quantities too
+
+customQuantity->unrequire();    // Decrement reference count
+geometry->purgeQuantities();    // Clears unrequired custom quantities too
+```
+
+**Important notes:**
+
+- The compute function should **re-initialize** the data buffer at the start (e.g., `customVertexAreas = VertexData<double>(*mesh);`), just like built-in quantities do. This is necessary because the buffer may be cleared after purging.
+- Custom quantities automatically integrate with `refreshQuantities()` and `purgeQuantities()`.
+- The returned handle (e.g., `customQuantity`) manages the lifetime of the quantity registration.
+- Custom quantities can depend on built-in quantities (like `faceAreas` in the example).
+
     Note: most users find that un-requiring and purging quantities is not necessary, and one can simply allow them to accumulate and eventually be deleted with the geometry object. This functionality can be used only if reducing memory usage is very important.
 
 ## Interfaces

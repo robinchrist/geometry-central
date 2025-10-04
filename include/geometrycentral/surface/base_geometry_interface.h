@@ -60,11 +60,27 @@ public:
   };
 
   // Register a custom managed quantity
+  //
+  // Custom quantities integrate seamlessly with the managed quantity system:
+  // - They are automatically recomputed by refreshQuantities()
+  // - They are automatically cleared by purgeQuantities() when unrequired
+  // - They can depend on other built-in or custom quantities
+  //
   // Usage:
+  //   FaceData<double> myData(*mesh);
   //   auto myQuantity = geometry.registerCustomManagedQuantity<FaceData<double>>(
-  //       myData, [&]() { /* compute myData */ });
+  //       myData, 
+  //       [&]() { 
+  //         // IMPORTANT: Re-initialize the data buffer
+  //         myData = FaceData<double>(*mesh);
+  //         // ... compute myData ...
+  //       });
   //   myQuantity->require();
-  //   double value = myQuantity->get()[someFace];
+  //   double value = myData[someFace];
+  //   myQuantity->unrequire();
+  //
+  // Note: The compute function should re-initialize the data buffer at the start,
+  // as it may be cleared after purging (see example above).
   template <typename T>
   std::shared_ptr<CustomManagedQuantity<T>> registerCustomManagedQuantity(
       T& dataBuffer, std::function<void()> computeFunc);
